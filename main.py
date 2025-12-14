@@ -1,7 +1,7 @@
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential 
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Input
 
 def load_and_preprocess_cifar10():
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
@@ -28,8 +28,10 @@ def create_baseline_cnn(input_shape=(32, 32, 3), num_classes=10):
         # Conv2D() applies 32 filters (feature detectors) of size 3x3
         # relu (Rectified Linear Unit) is the activation function
 
-        # This layer learns the edges and the corners from the input image
-        Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
+        # These layers learn the edges and the corners from the input image
+        # The input form is preferred to be passed down as a separate layer
+        Input(shape=input_shape),
+        Conv2D(32, (3, 3), activation='relu'),
 
         # MaxPooling2D() reduces the resolution of the feature maps by taking the maximum value in a 2x2 window
 
