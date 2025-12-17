@@ -1,7 +1,7 @@
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Input
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Input, Dropout
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
 
@@ -44,11 +44,19 @@ def create_baseline_cnn(input_shape=(32, 32, 3), num_classes=10):
         # This reduces the spatial size from 32x32 to 16x16 
         # lowering computation and helping the model become more robust to variations in image position.
         MaxPooling2D((2, 2)),
+        # Disabling 25% of the neurons in the first block in a try to prevent overfitting
+        Dropout(0.25),
 
         # A 2nd Conv2D layer learns more complex features like shapes and textures(abstract features) using 64 filters
         # Increases the complexity of learned features by combining with the output of the first layer
         Conv2D(64, (3, 3), activation='relu'),
         MaxPooling2D((2, 2)),
+        Dropout(0.25),
+
+        # A 3rd layer intended to increase the model's capacity
+        Conv2D(128, (3, 3), activation='relu'),
+        MaxPooling2D((2, 2)),
+        Dropout(0.25),
 
         # Flatten() converts the 2D feature maps into a 1D feature vector
 
@@ -59,7 +67,8 @@ def create_baseline_cnn(input_shape=(32, 32, 3), num_classes=10):
         # Dense() is a fully connected layer with 100 neurons and relu activation
 
         # Performs high-level reasoning on the extracted 1D features before classification
-        Dense(100, activation='relu'),
+        Dense(256, activation='relu'),
+        Dropout(0.5),
 
         # The final Dense layer outputs a probability distribution over the 10 classes using softmax activation
         # It outputs a dense layer with 10 neurons as the final classification 
