@@ -1,7 +1,7 @@
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Input, Dropout
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Input, Dropout, BatchNormalization
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
 
@@ -26,37 +26,50 @@ def load_and_preprocess_cifar10():
 
     return (x_train, y_train_encoded), (x_test, y_test_encoded)
 
-def create_baseline_cnn(input_shape=(32, 32, 3), num_classes=10):
+def create_improved_vgg_cnn(input_shape=(32, 32, 3), num_classes=10):
     # Sequential([]) defines the model as a sequential stack of layers
     # where output from one layer feeds directly into the next
     model = Sequential([
+        # The input form is preferred to be passed down as a separate layer
+        Input(shape=input_shape),
 
         # Conv2D() applies 32 filters (feature detectors) of size 3x3
         # relu (Rectified Linear Unit) is the activation function
 
         # These layers learn the edges and the corners from the input image
-        # The input form is preferred to be passed down as a separate layer
-        Input(shape=input_shape),
-        Conv2D(32, (3, 3), activation='relu'),
+        Conv2D(32, (3, 3), activation='relu', padding='same'),
+
+        # BatchNormalization acts like a stabilizer for the learning process
+        # so the model finds the "best answer" (converges) much faster
+        BatchNormalization(),
+        Conv2D(32, (3, 3), activation='relu', padding='same'),
+        BatchNormalization(),
 
         # MaxPooling2D() reduces the resolution of the feature maps by taking the maximum value in a 2x2 window
 
         # This reduces the spatial size from 32x32 to 16x16 
         # lowering computation and helping the model become more robust to variations in image position.
         MaxPooling2D((2, 2)),
+
         # Disabling 25% of the neurons in the first block in a try to prevent overfitting
-        Dropout(0.25),
+        Dropout(0.2),
 
         # A 2nd Conv2D layer learns more complex features like shapes and textures(abstract features) using 64 filters
         # Increases the complexity of learned features by combining with the output of the first layer
-        Conv2D(64, (3, 3), activation='relu'),
+        Conv2D(64, (3, 3), activation='relu', padding='same'),
+        BatchNormalization(),
+        Conv2D(64, (3, 3), activation='relu', padding='same'),
+        BatchNormalization(),
         MaxPooling2D((2, 2)),
-        Dropout(0.25),
+        Dropout(0.3),
 
         # A 3rd layer intended to increase the model's capacity
-        Conv2D(128, (3, 3), activation='relu'),
+        Conv2D(128, (3, 3), activation='relu', padding='same'),
+        BatchNormalization(),
+        Conv2D(128, (3, 3), activation='relu', padding='same'),
+        BatchNormalization(),
         MaxPooling2D((2, 2)),
-        Dropout(0.25),
+        Dropout(0.4),
 
         # Flatten() converts the 2D feature maps into a 1D feature vector
 
@@ -67,11 +80,12 @@ def create_baseline_cnn(input_shape=(32, 32, 3), num_classes=10):
         # Dense() is a fully connected layer with 100 neurons and relu activation
 
         # Performs high-level reasoning on the extracted 1D features before classification
-        Dense(256, activation='relu'),
+        Dense(128, activation='relu'),
+        BatchNormalization(),
         Dropout(0.5),
 
         # The final Dense layer outputs a probability distribution over the 10 classes using softmax activation
-        # It outputs a dense layer with 10 neurons as the final classification 
+        # It outputs a dense layer with 10 neurons as the final classification
         # softmax ensures the output values are probabilities that sum up to 1
         Dense(num_classes, activation='softmax')
     ])
@@ -81,7 +95,7 @@ def create_baseline_cnn(input_shape=(32, 32, 3), num_classes=10):
     # loss='categorical_crossentropy' is the metric used to calculate the error between the prediction and the true label
     # It's the standard choice for multi-class classification with one-hot encoded labels.
     # metrics=['accuracy'] is the value displayed during and after training to easily gauge model performance.
-    
+
     model.compile(optimizer='adam',
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
